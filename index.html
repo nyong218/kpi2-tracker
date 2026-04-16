@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI2 프로젝트별 CVR 개선율 트래커</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── JAMS 2.1 Design System – JK Light Theme ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  /* Primitives */
+  --white:      #FFFFFF;
+  --gray-50:    #F4F6F7;
+  --gray-100:   #E2E6E8;
+  --gray-200:   #D1D6DA;
+  --gray-300:   #B8BFC5;
+  --gray-400:   #9EA8AF;
+  --gray-500:   #86919A;
+  --gray-600:   #636C74;
+  --gray-800:   #30363C;
+  --gray-950:   #131618;
+  /* JK Brand */
+  --brand-50:   #EEF3FF;
+  --brand-100:  #D5E4FF;
+  --brand-200:  #AECCFF;
+  --brand-300:  #82AAFF;
+  --brand-500:  #1B55F6;
+  --brand-600:  #1240CC;
+  --brand-700:  #0D2EA0;
+  /* System */
+  --green-50:   #EEFFF6;
+  --green-100:  #C4F5DF;
+  --green-500:  #02B160;
+  --green-700:  #015F30;
+  --red-50:     #FFF2F1;
+  --red-100:    #FFD9D6;
+  --red-500:    #F22A23;
+  --yellow-50:  #FFFCE8;
+  --yellow-100: #FFF5CC;
+  --yellow-500: #FFBB00;
+  --yellow-700: #9A5E00;
+  --blue-50:    #EBF5FF;
+  --blue-500:   #2684FF;
+  --violet-50:  #F5F3FF;
+  --violet-500: #7C3AED;
+  /* Semantic */
+  --bg-base:      var(--white);
+  --bg-surface:   var(--gray-50);
+  --border-default: var(--gray-200);
+  --border-subtle:  var(--gray-100);
+  --text-primary:   var(--gray-950);
+  --text-secondary: var(--gray-600);
+  --text-tertiary:  var(--gray-500);
+  --text-disabled:  var(--gray-400);
+  --text-brand:     var(--brand-500);
+  /* Radius */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-pill: 999px;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px;
+}
+.header-logo .kpi-tag {
+  background: var(--brand-50); color: var(--brand-500);
+  font-size: 11px; font-weight: 600; padding: 2px 8px;
+  border-radius: var(--r-pill); border: 1px solid var(--brand-200);
+  letter-spacing: 0.2px;
+}
+.header-divider { width: 1px; height: 18px; background: var(--border-default); }
+.header-sub { font-size: 13px; color: var(--text-tertiary); font-weight: 400; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+/* ── Buttons (JAMS Button spec) ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: inherit; font-weight: 600; cursor: pointer;
+  border-radius: var(--r-md); border: none; transition: all 0.15s;
+  white-space: nowrap; text-decoration: none;
+}
+.btn-primary {
+  background: var(--brand-500); color: white;
+  padding: 0 16px; height: 40px; font-size: 14px;
+}
+.btn-primary:hover { background: var(--brand-600); }
+.btn-primary:active { background: var(--brand-700); }
+.btn-secondary {
+  background: var(--brand-50); color: var(--brand-500);
+  border: 1px solid var(--brand-200); padding: 0 14px; height: 36px; font-size: 13px;
+}
+.btn-secondary:hover { background: var(--brand-100); }
+.btn-monoline {
+  background: var(--white); color: var(--text-primary);
+  border: 1px solid var(--border-default); padding: 0 12px; height: 32px; font-size: 13px;
+}
+.btn-monoline:hover { background: var(--gray-50); }
+.btn-danger {
+  background: var(--white); color: var(--red-500);
+  border: 1px solid var(--red-100); padding: 0 12px; height: 32px; font-size: 13px;
+}
+.btn-danger:hover { background: var(--red-50); }
+
+/* ── SUBHEADER (KPI info) ── */
+.subheader {
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 32px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.subheader-label { font-size: 12px; color: var(--text-tertiary); font-weight: 500; }
+.subheader-value { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+.grade-chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px; border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+  border: 1px solid transparent;
+}
+.chip-s { background: var(--green-50); color: var(--green-700); border-color: var(--green-100); }
+.chip-a { background: var(--brand-50); color: var(--brand-700); border-color: var(--brand-100); }
+.chip-b { background: var(--blue-50); color: #0060CC; border-color: #CCE4FF; }
+.chip-c { background: var(--yellow-50); color: var(--yellow-700); border-color: var(--yellow-100); }
+.chip-f { background: var(--red-50); color: var(--red-500); border-color: var(--red-100); }
+.chip-none { background: var(--gray-50); color: var(--text-tertiary); border-color: var(--border-default); }
+.sep { color: var(--border-default); }
+
+/* ── MAIN LAYOUT ── */
+.main { padding: 28px 32px; max-width: 1440px; margin: 0 auto; }
+
+/* ── SECTION HEADING ── */
+.section-heading {
+  font-size: 13px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-heading::after { content:''; flex:1; height:1px; background: var(--border-subtle); }
+
+/* ── SUMMARY CARDS ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.summary-card {
+  background: var(--white);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.sc-brand::after { background: linear-gradient(90deg, var(--brand-500), var(--brand-300)); }
+.sc-green::after { background: linear-gradient(90deg, var(--green-500), #4AD898); }
+.sc-yellow::after { background: linear-gradient(90deg, var(--yellow-500), #FFC821); }
+.sc-blue::after { background: linear-gradient(90deg, var(--blue-500), var(--brand-300)); }
+.sc-label {
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+}
+.sc-value {
+  font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+  line-height: 1; margin-bottom: 6px;
+}
+.sc-sub { font-size: 12px; color: var(--text-tertiary); }
+
+/* ── GRADE TRACK ── */
+.grade-track-card {
+  background: var(--white);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.gt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.gt-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.gt-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.gt-score { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; text-align: right; }
+.grade-track { display: flex; gap: 6px; }
+.grade-seg {
+  flex: 1; padding: 10px 8px; border-radius: var(--r-md); text-align: center;
+  border: 2px solid transparent; opacity: 0.3; transition: all 0.2s;
+}
+.grade-seg.active { opacity: 1; border-color: currentColor; }
+.gs-s { background: var(--green-50); color: var(--green-500); }
+.gs-s.active { border-color: var(--green-500); background: var(--green-100); }
+.gs-a { background: var(--brand-50); color: var(--brand-500); }
+.gs-a.active { border-color: var(--brand-500); background: var(--brand-100); }
+.gs-b { background: var(--blue-50); color: var(--blue-500); }
+.gs-b.active { border-color: var(--blue-500); }
+.gs-c { background: var(--yellow-50); color: var(--yellow-500); }
+.gs-c.active { border-color: var(--yellow-500); background: var(--yellow-100); }
+.gs-f { background: var(--red-50); color: var(--red-500); }
+.gs-f.active { border-color: var(--red-500); background: var(--red-100); }
+.gs-label { font-size: 16px; font-weight: 800; }
+.gs-range { font-size: 10px; font-weight: 500; margin-top: 2px; opacity: 0.8; }
+.gt-note { font-size: 11px; color: var(--text-tertiary); text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
+
+/* ── PROJECT TABLE ── */
+.table-card {
+  background: var(--white);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-toolbar {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.table-toolbar-title { font-size: 15px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  padding: 10px 14px; text-align: left;
+  color: var(--text-tertiary); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--gray-50); white-space: nowrap;
+}
+tbody td { padding: 13px 14px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--gray-50); }
+.example-row td { background: #FFFCE8 !important; }
+.example-row:hover td { background: #FFF5CC !important; }
+
+/* ── Tags ── */
+.tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: var(--r-xs);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+  border: 1px solid transparent;
+}
+.tag-landing { background: var(--brand-50); color: var(--brand-700); border-color: var(--brand-100); }
+.tag-event   { background: var(--violet-50); color: var(--violet-500); border-color: #EDE8FF; }
+.tag-jd      { background: var(--blue-50); color: #0060CC; border-color: #CCE4FF; }
+.tag-ready   { background: var(--gray-50); color: var(--text-tertiary); border-color: var(--border-default); }
+.tag-measuring { background: var(--yellow-50); color: var(--yellow-700); border-color: var(--yellow-100); }
+.tag-done    { background: var(--green-50); color: var(--green-700); border-color: var(--green-100); }
+
+/* ── Delta values ── */
+.delta-pos { color: var(--green-500); font-weight: 700; }
+.delta-neg { color: var(--red-500); font-weight: 700; }
+.delta-neutral { color: var(--text-tertiary); font-weight: 500; }
+.delta-na { color: var(--text-disabled); font-style: italic; }
+
+/* ── CVR number cell ── */
+.cvr-num { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.cvr-arrow { color: var(--border-default); font-size: 12px; text-align: center; }
+
+/* ── Example badge ── */
+.example-badge {
+  display: inline-flex; align-items: center;
+  background: var(--yellow-50); color: var(--yellow-700);
+  border: 1px solid var(--yellow-100); border-radius: var(--r-xs);
+  font-size: 10px; font-weight: 600; padding: 0 5px; margin-left: 4px;
+  vertical-align: middle; letter-spacing: 0.2px;
+}
+
+/* ── Clarity UX sub-row ── */
+.clarity-subrow td {
+  padding: 5px 14px 8px !important;
+  background: #F0F4FF !important;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.example-row.clarity-subrow td { background: #FFF5CC !important; }
+.clarity-metrics-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.clarity-tag {
+  display: inline-flex; align-items: center;
+  background: #E8EEFF; color: var(--brand-500);
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: var(--r-xs); border: 1px solid var(--brand-200);
+  letter-spacing: 0.4px; flex-shrink: 0;
+}
+.clarity-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text-secondary);
+}
+.clarity-badge-label {
+  font-size: 10px; color: var(--text-disabled); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.clarity-warn { color: var(--red-500) !important; font-weight: 700; }
+.clarity-ok   { color: var(--green-500) !important; font-weight: 700; }
+.clarity-updated { font-size: 10px; color: var(--text-disabled); margin-left: auto; }
+.clarity-sync-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600; color: var(--brand-500);
+  background: none; border: 1px solid var(--brand-200);
+  border-radius: var(--r-xs); padding: 2px 7px; cursor: pointer;
+  font-family: inherit; flex-shrink: 0;
+}
+.clarity-sync-btn:hover { background: var(--brand-50); }
+
+/* ── CHART CARD ── */
+.chart-card {
+  background: var(--white);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+  margin-bottom: 24px;
+}
+.chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+.chart-title { font-size: 15px; font-weight: 600; }
+.chart-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.chart-legend { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+.chart-wrap { height: 260px; position: relative; }
+.chart-empty-state {
+  height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--text-tertiary); gap: 8px;
+}
+.chart-empty-state p { font-size: 13px; }
+.chart-empty-state small { font-size: 12px; }
+
+/* ── FORMULA GUIDE ── */
+.formula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.formula-card {
+  background: var(--white); border: 1px solid var(--border-default);
+  border-radius: var(--r-lg); padding: 16px 18px;
+}
+.formula-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.formula-expr { font-size: 13px; font-weight: 600; color: var(--text-primary); font-family: 'Pretendard', monospace; margin-bottom: 5px; line-height: 1.5; }
+.formula-example { font-size: 11px; color: var(--text-tertiary); }
+
+/* ── NOTICE ── */
+.notice {
+  background: var(--yellow-50); border: 1px solid var(--yellow-100);
+  border-radius: var(--r-md); padding: 12px 16px; margin-bottom: 24px;
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 13px; color: var(--yellow-700); line-height: 1.6;
+}
+.notice strong { color: #6C3E00; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--white); border: 1px solid var(--border-default);
+  border-radius: var(--r-xl); width: 100%; max-width: 540px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+.modal-header {
+  padding: 18px 24px; border-bottom: 1px solid var(--border-subtle);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--white); z-index: 1;
+}
+.modal-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.modal-close {
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  background: transparent; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 16px; transition: background 0.15s;
+}
+.modal-close:hover { background: var(--gray-50); color: var(--text-primary); }
+.modal-body { padding: 22px 24px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.form-row.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.2px; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--white); border: 1px solid var(--border-default);
+  border-radius: var(--r-sm); padding: 9px 12px;
+  color: var(--text-primary); font-size: 14px;
+  font-family: inherit; outline: none; transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(27,85,246,0.08); }
+.form-group input::placeholder { color: var(--text-disabled); }
+.form-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
+/* ── Preview calc ── */
+.preview-box {
+  background: var(--gray-50); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); padding: 14px 16px; margin: 14px 0;
+}
+.preview-box-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.preview-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+.preview-row-key { font-size: 13px; color: var(--text-secondary); }
+.preview-row-val { font-size: 14px; font-weight: 700; }
+.preview-divider { height: 1px; background: var(--border-subtle); margin: 8px 0; }
+
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid var(--border-subtle);
+  display: flex; gap: 8px; justify-content: flex-end;
+  position: sticky; bottom: 0; background: var(--white); z-index: 1;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  padding: 52px 20px; text-align: center;
+  color: var(--text-tertiary); display: none;
+}
+.empty-state p { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--text-secondary); }
+.empty-state small { font-size: 12px; }
+
+/* ── DETAIL PAGE ── */
+#detailPage { min-height: calc(100vh - 60px); background: var(--bg-surface); }
+.detail-nav {
+  background: var(--white); border-bottom: 1px solid var(--border-subtle);
+  padding: 0 32px; height: 52px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  position: sticky; top: 60px; z-index: 40;
+}
+.detail-back-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  font-family: inherit; padding: 5px 10px 5px 6px;
+  border-radius: var(--r-sm); transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.detail-back-btn:hover { background: var(--gray-50); color: var(--text-primary); }
+.detail-nav-center { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.detail-nav-title { font-size: 15px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-main { max-width: 920px; margin: 0 auto; padding: 24px 32px 48px; }
+.dp-section {
+  background: var(--white); border: 1px solid var(--border-default);
+  border-radius: var(--r-lg); padding: 22px 24px; margin-bottom: 16px;
+}
+.dp-section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.dp-section-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.dp-section-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+/* KPI cards */
+.dp-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.dp-kpi-card {
+  background: var(--white); border: 1px solid var(--border-default);
+  border-radius: var(--r-lg); padding: 16px 18px; border-top: 3px solid transparent;
+}
+.dp-kpi-lbl { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.dp-kpi-val { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+.dp-kpi-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; }
+
+/* CVR/CPA comparison */
+.dp-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.dp-compare-side {}
+.dp-compare-lbl { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.dp-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.dp-bar-legend { font-size: 11px; color: var(--text-tertiary); width: 40px; flex-shrink: 0; }
+.dp-bar-track { flex: 1; height: 10px; background: var(--gray-100); border-radius: var(--r-pill); overflow: hidden; }
+.dp-bar-fill { height: 100%; border-radius: var(--r-pill); transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+.dp-bar-pct { font-size: 13px; font-weight: 700; width: 52px; text-align: right; flex-shrink: 0; }
+.dp-delta-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+.dp-delta-val { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+
+/* Clarity metrics */
+.dp-clarity-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+.dp-clarity-tile {
+  background: var(--gray-50); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); padding: 14px; text-align: center;
+}
+.dp-clarity-tile.warn { background: var(--red-50); border-color: var(--red-100); }
+.dp-clarity-tile.ok { background: var(--green-50); border-color: var(--green-100); }
+.dp-tile-lbl { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+.dp-tile-val { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); }
+.dp-clarity-tile.warn .dp-tile-val { color: var(--red-500); }
+.dp-clarity-tile.ok .dp-tile-val { color: var(--green-500); }
+.dp-tile-hint { font-size: 10px; color: var(--text-tertiary); margin-top: 3px; }
+.dp-insight-list { list-style: none; border-top: 1px solid var(--border-subtle); padding-top: 14px; }
+.dp-insight-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); font-size: 13px; }
+.dp-insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+.dp-insight-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.dp-insight-text strong { color: var(--text-primary); }
+.dp-no-clarity { text-align: center; padding: 24px 0; color: var(--text-tertiary); font-size: 13px; }
+
+/* Hypothesis & changes */
+.dp-textarea {
+  width: 100%; border: 1px solid var(--border-default); border-radius: var(--r-sm);
+  padding: 10px 12px; font-family: inherit; font-size: 13px; color: var(--text-primary);
+  line-height: 1.6; resize: vertical; min-height: 80px; outline: none;
+  transition: border-color 0.15s; background: var(--white);
+}
+.dp-textarea:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(27,85,246,0.08); }
+.dp-change-list { list-style: none; margin-bottom: 12px; }
+.dp-change-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-secondary); }
+.dp-change-item:first-child { padding-top: 0; }
+.dp-change-item::before { content: '•'; color: var(--brand-500); font-weight: 700; flex-shrink: 0; }
+.dp-change-rm { background: none; border: none; cursor: pointer; color: var(--text-disabled); font-size: 12px; margin-left: auto; padding: 2px 5px; border-radius: var(--r-xs); font-family: inherit; line-height: 1; flex-shrink: 0; }
+.dp-change-rm:hover { color: var(--red-500); background: var(--red-50); }
+.dp-add-row { display: flex; gap: 8px; }
+.dp-add-input { flex: 1; border: 1px solid var(--border-default); border-radius: var(--r-sm); padding: 8px 12px; font-family: inherit; font-size: 13px; color: var(--text-primary); outline: none; transition: border-color 0.15s; background: var(--white); }
+.dp-add-input:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(27,85,246,0.08); }
+.dp-add-input::placeholder { color: var(--text-disabled); }
+
+/* Activity log */
+.dp-log-list { list-style: none; }
+.dp-log-item { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-subtle); font-size: 13px; }
+.dp-log-item:first-child { border-top: none; padding-top: 0; }
+.dp-log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.dp-log-date { font-size: 11px; color: var(--text-tertiary); font-weight: 500; white-space: nowrap; padding-top: 1px; min-width: 72px; }
+.dp-log-note { color: var(--text-secondary); flex: 1; }
+.dp-log-empty { font-size: 13px; color: var(--text-tertiary); padding: 8px 0; font-style: italic; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .main { padding: 20px 16px; }
+  .header { padding: 0 16px; }
+  .subheader { padding: 10px 16px; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">
+      KPI2 프로젝트 트래커
+      <span class="kpi-tag">CD 단독 · 가중치 10</span>
+    </div>
+    <div class="header-divider"></div>
+    <span class="header-sub">개별 랜딩/이벤트 페이지 내부 CVR 개선율 측정</span>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      프로젝트 추가
+    </button>
+  </div>
+</header>
+
+<!-- ── SUBHEADER ── -->
+<div class="subheader">
+  <span class="subheader-label">목표</span>
+  <span class="subheader-value">내부 CVR 개선율 + CPA 개선율 평균 5% 이상 (외부 유입 제외)</span>
+  <span class="se
+  const canvas = document.getElementById('projectChart');
+  const wrap   = document.getElementById('chartWrap');
+  const empty  = document.getElementById('chartEmpty');
+  const valid  = projects.filter(p=>calcCvr(p.beforeCvr,p.afterCvr)!=null);
+  if (!valid.length) {
+    wrap.style.display='none'; empty.style.display='flex';
+    if(chartInst){chartInst.destroy();chartInst=null;} return;
+  }
+  wrap.style.display='block'; empty.style.display='none';
+  const labels   = valid.map(p=>p.name.length>16?p.name.slice(0,16)+'…':p.name);
+  const cvrData  = valid.map(p=>+(calcCvr(p.beforeCvr,p.afterCvr)||0).toFixed(2));
+  const kpi2Data = valid.map(p=>{
+    const k=calcKpi2(calcCvr(p.beforeCvr,p.afterCvr),calcCpa(p.beforeCpa,p.afterCpa));
+    returnp">·</span>
+  <span class="grade-chip chip-s">S ≥ 7%</span>
+  <span class="grade-chip chip-a">A ≥ 5.5%</span>
+  <span class="grade-chip chip-b">B ≥ 5%</span>
+  <span class="grade-chip chip-c">C ≥ 0%</span>
+  <span class="grade-chip chip-f">F &lt; 0%</span>
+  <span class="sep">·</span>
+  <span class="subheader-label">산식</span>
+  <span class="subheader-value">(CVR 개선율 + CPA 개선율) ÷ 2</span>
+</div>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- Notice -->
+  <div class="notice">
+    <span style="font-size:15px;flex-shrink:0">📌</span>
+    <span>아래는 <strong>예시 프로젝트 3건</strong>이 입력되어 있습니다. 실제 랜딩/이벤트 작업이 시작되면 <strong>프로젝트 추가</strong> 버튼으로 등록해주세요. 예시 데이터는 삭제 버튼으로 제거할 수 있습니다.</span>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="section-heading">KPI2 현황 요약</div>
+  <div class="summary-row">
+    <div class="summary-card sc-brand">
+      <div class="sc-label">전체 프로젝트</div>
+      <div class="sc-value" id="totalCount" style="color:var(--brand-500)">—</div>
+      <div class="sc-sub">측정 완료 + 측정 중</div>
+    </div>
+    <div class="summary-card sc-green">
+      <div class="sc-label">CVR 평균 개선율</div>
+      <div class="sc-value" id="avgCvrImprove" style="color:var(--green-500)">—</div>
+      <div class="sc-sub" id="avgCvrSub">완료 프로젝트 기준</div>
+    </div>
+    <div class="summary-card sc-yellow">
+      <div class="sc-label">CPA 평균 개선율</div>
+      <div class="sc-value" id="avgCpaImprove" style="color:var(--yellow-500)">—</div>
+      <div class="sc-sub">CPA 측정 프로젝트 기준</div>
+    </div>
+    <div class="summary-card sc-blue">
+      <div class="sc-label">KPI2 통합 점수</div>
+      <div class="sc-value" id="kpi2Score" style="color:var(--brand-500)">—</div>
+      <div class="sc-sub">(CVR + CPA 개선율) ÷ 2</div>
+    </div>
+  </div>
+
+  <!-- Grade track -->
+  <div class="grade-track-card">
+    <div class="gt-header">
+      <div>
+        <div class="gt-title">KPI2 현재 등급</div>
+        <div class="gt-sub">완료(Done) 상태 프로젝트 집계 기준</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-tertiary);text-align:right;margin-bottom:3px">KPI2 통합 점수</div>
+        <div class="gt-score" id="gradeScoreDisplay">—</div>
+      </div>
+    </div>
+    <div class="grade-track">
+      <div class="grade-seg gs-f" id="seg-f"><div class="gs-label">F</div><div class="gs-range">&lt; 0%</div></div>
+      <div class="grade-seg gs-c" id="seg-c"><div class="gs-label">C</div><div class="gs-range">≥ 0%</div></div>
+      <div class="grade-seg gs-b" id="seg-b"><div class="gs-label">B</div><div class="gs-range">≥ 5%</div></div>
+      <div class="grade-seg gs-a" id="seg-a"><div class="gs-label">A</div><div class="gs-range">≥ 5.5%</div></div>
+      <div class="grade-seg gs-s" id="seg-s"><div class="gs-label">S</div><div class="gs-range">≥ 7%</div></div>
+    </div>
+    <div class="gt-note">
+      ※ 개별 프로젝트가 완료(Done) 상태로 등록된 경우에만 집계됩니다
+    </div>
+  </div>
+
+  <!-- Project table -->
+  <div class="section-heading">프로젝트 목록</div>
+  <div class="table-card">
+    <div class="table-toolbar">
+      <div class="table-toolbar-title">📋 프로젝트 목록 <span style="font-weight:400;font-size:13px;color:var(--text-tertiary)" id="projectCount"></span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:12px;color:var(--text-tertiary)">행을 클릭해 편집</span>
+        <button class="btn btn-secondary" onclick="openModal()">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          추가
+        </button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>프로젝트명</th>
+            <th>유형</th>
+            <th>상태</th>
+            <th style="text-align:right">기준 CVR<br><span style="font-weight:400;text-transform:none;font-size:10px">(Before)</span></th>
+            <th style="text-align:center;width:28px"></th>
+            <th style="text-align:right">현재 CVR<br><span style="font-weight:400;text-transform:none;font-size:10px">(After)</span></th>
+            <th style="text-align:right">CVR 개선율</th>
+            <th style="text-align:right">기준 CPA</th>
+            <th style="text-align:right">현재 CPA</th>
+            <th style="text-align:right">CPA 개선율</th>
+            <th style="text-align:right">KPI2 점수</th>
+            <th style="text-align:center">등급</th>
+            <th style="text-align:center;width:80px">작업</th>
+          </tr>
+        </thead>
+        <tbody id="projectTableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state">
+        <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;margin-bottom:8px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <p>등록된 프로젝트가 없습니다</p>
+        <small>+ 추가 버튼으로 첫 번째 프로젝트를 등록해보세요</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="section-heading">프로젝트별 CVR 개선율 비교</div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">프로젝트별 KPI2 점수 비교</div>
+        <div class="chart-sub">CVR 개선율 · KPI2 통합 점수 · 빨간 점선 = 목표 5%</div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--brand-500)"></div>CVR 개선율</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green-500)"></div>KPI2 점수</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="projectChart"></canvas>
+    </div>
+    <div id="chartEmpty" class="chart-empty-state" style="display:none">
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="opacity:0.35"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <p>프로젝트를 추가하면 차트가 표시됩니다</p>
+    </div>
+  </div>
+
+  <!-- Formula guide -->
+  <div class="section-heading">산식 안내</div>
+  <div class="formula-grid">
+    <div class="formula-card">
+      <div class="formula-label" style="color:var(--brand-500)">CVR 개선율</div>
+      <div class="formula-expr">(After − Before) / Before × 100</div>
+      <div class="formula-example">예: 45.0% → 48.2% = <strong>+7.1%</strong> 개선</div>
+    </div>
+    <div class="formula-card">
+      <div class="formula-label" style="color:var(--yellow-700)">CPA 개선율</div>
+      <div class="formula-expr">(Before − After) / Before × 100</div>
+      <div class="formula-example">예: 15,000원 → 13,500원 = <strong>+10.0%</strong> 개선</div>
+    </div>
+    <div class="formula-card">
+      <div class="formula-label" style="color:var(--green-500)">KPI2 통합 점수</div>
+      <div class="formula-expr">(CVR 개선율 + CPA 개선율) ÷ 2</div>
+      <div class="formula-example">CPA 미측정 시 CVR 개선율 단독 적용</div>
+    </div>
+    <div class="formula-card">
+      <div class="formula-label" style="color:var(--text-tertiary)">전체 KPI2 등급</div>
+      <div class="formula-expr">전체 프로젝트 KPI2 점수 평균</div>
+      <div class="formula-example">상태가 <strong>완료</strong>인 프로젝트만 집계</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── DETAIL PAGE ── -->
+<div id="detailPage" style="display:none">
+  <div class="detail-nav">
+    <button class="detail-back-btn" onclick="showList()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+       목록휉�\n    </button>
+    <div class="detail-nav-center">
+      <span class="detail-nav-title" id="dpNavTitle"></span>
+      <span id="dpNavTags" style="display:flex;gap:5px;flex-shrink:0"></span>
+    </div>
+    <div id="dpNavGrade" style="flex-shrink:0"></div>
+  </div>
+  <div class="detail-main">
+    <div id="dpKpiGrid" class="dp-kpi-grid"></div>
+    <div id="dpCvrSection" class="dp-section"></div>
+    <div id="dpClaritySection" class="dp-section"></div>
+    <div id="dpHypSection" class="dp-section"></div>
+    <div id="dpLogSection" class="dp-section"></div>
+  </div>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">프로젝트 추가</div>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+
+      <!-- URL 자동분석 -->
+      <div class="form-row full">
+        <div class="form-group">
+          <label>랜딩 URL</label>
+          <div style="display:flex;gap:8px">
+            <input type="url" id="fUrl" placeholder="https://www.jobkorea.co.kr/..." style="flex:1">
+            <button type="button" class="btn btn-secondary" style="height:38px;padding:0 14px;gap:5px;flex-shrink:0" onclick="requestUrlAnalysis()">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+              AI 자동분석
+            </button>
+          </div>
+          <span class="form-hint">URL 입력 후 'AI 자동분석'을 누르면 Claude가 페이지를 분석해 자동으로 채워드려요</span>
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>프로젝트명 *</label>
+          <input type="text" id="fName" placeholder="예: IT직군 채용 랜딩 리디자인">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>유형 *</label>
+          <select id="fType">
+            <option value="landing">랜딩페이지</option>
+            <option value="event">이벤트페이지</option>
+            <option value="jd">JD 페이지</option>
+            <option value="other">기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>상태</label>
+          <select id="fStatus">
+            <option value="ready">준비중</option>
+            <option value="measuring">측정 중</option>
+            <option value="done">완료</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>기준 CVR (Before) % *</label>
+          <input type="number" id="fBeforeCvr" step="0.01" min="0" max="100" placeholder="예: 45.20">
+          <span class="form-hint">개선 전 CVR 수치 (%)</span>
+        </div>
+        <div class="form-group">
+          <label>현재 CVR (After) %</label>
+          <input type="number" id="fAfterCvr" step="0.01" min="0" max="100" placeholder="측정 후 입력">
+          <span class="form-hint">준비중이면 비워두세요</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>기준 CPA (Before) 원</label>
+          <input type="number" id="fBeforeCpa" min="0" placeholder="예: 15200">
+          <span class="form-hint">선택 · 미측정 시 비워두세요</span>
+        </div>
+        <div class="form-group">
+          <label>현재 CPA (After) 원</label>
+          <input type="number" id="fAfterCpa" min="0" placeholder="측정 후 입력">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>런칭일</label>
+          <input type="date" id="fDate">
+        </div>
+        <div class="form-group">
+          <label>담당자</label>
+          <input type="text" id="fOwner" placeholder="예: 홍길동">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>메모</label>
+          <textarea id="fMemo" rows="2" placeholder="프로젝트 설명, 개선 포인트 등" style="resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Clarity 프로젝트 ID</label>
+          <input type="text" id="fClarityProjectId" placeholder="예: v7xli4ilka (Clarity URL에서 확인)">
+          <span class="form-hint">입력하면 "↻ 갱신" 버튼으로 Claude가 Clarity 데이터를 자동으로 가져와요</span>
+        </div>
+      </div>
+
+      <div class="preview-box" id="previewBox" style="display:none">
+        <div class="preview-box-label">📊 미리보기 계산</div>
+        <div class="preview-row">
+          <span class="preview-row-key">CVR 개선율</span>
+          <span class="preview-row-val" id="previewCvr">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-row-key">CPA 개선율</span>
+          <span class="preview-row-val" id="previewCpa">—</span>
+        </div>
+        <div class="preview-divider"></div>
+        <div class="preview-row">
+          <span class="preview-row-key" style="font-weight:600">KPI2 점수</span>
+          <span class="preview-row-val" id="previewKpi2" style="font-size:18px">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-row-key">등급</span>
+          <span id="previewGrade">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-monoline" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveProject()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        저장
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──
+let projects = [
+  { id:1, example:true, name:'IT직군 채용 랜딩페이지 리디자인', type:'landing', status:'done',
+    beforeCvr:45.2, afterCvr:48.5, beforeCpa:15200, afterCpa:13800,
+    date:'2026-02-10', owner:'홍길동', memo:'예시: 직군 특화 랜딩 개편, CTA 위치·인포그래픽 개선',
+    clarityProjectId:'v7xli4ilka', claritySessions:200, clarityScrollDepth:70.09,
+    clarityDeadClick:7.5, clarityQuickBack:17, clarityActiveTime:1.8, clarityUpdatedAt:'2026-04-15',
+    hypothesis:'직군 특화 카피와 CTA 버튼 상단 배치로 지원 의도가 높은 사용자의 이탈을 줄이면 CVR이 5% 이상 개선될 것이다.',
+    changeItems:['헤더 카피 IT직군 특화 문구로 교체','CTA 버튼 위치 스크롤 400px 위로 이동','직군별 인포그래픽 섹션 신규 추가','모바일 뷰 레이아웃 1컬럼 재정렬'],
+    activityLog:[
+      {date:'2026-02-10', note:'프로젝트 시작 — 기준 CVR 45.2% 확정', type:'auto'},
+      {date:'2026-02-18', note:'디자인 시안 완성 및 QA 진행', type:'manual'},
+      {date:'2026-03-01', note:'프로덕션 배포 완료', type:'manual'},
+      {date:'2026-04-15', note:'Clarity 데이터 갱신 — 세션 200, 스크롤 70.09%', type:'auto'}
+    ] },
+  { id:2, example:true, name:'봄 시즌 채용 이벤트 랜딩', type:'event', status:'done',
+    beforeCvr:38.5, afterCvr:41.0, beforeCpa:22400, afterCpa:21100,
+    date:'2026-03-04', owner:'김디자인', memo:'예시: 3월 채용 시즌 이벤트 페이지 비주얼 개편',
+    clarityProjectId:null, claritySessions:null, clarityScrollDepth:null,
+    clarityDeadClick:null, clarityQuickBack:null, clarityActiveTime:null, clarityUpdatedAt:null,
+    hypothesis:'봄 채용 시즌 특성에 맞는 비주얼과 감성적 카피로 방문자의 감정적 공감을 유도하면 지원 CVR이 향상될 것이다.',
+    changeItems:['봄 시즌 메인 비주얼 교체','지원자 후기 섹션 신규 추가','CTA 카피 변경 "지금 지원하기" → "나의 커리어 시작하기"'],
+    activityLog:[
+      {date:'2026-03-04', note:'프로젝트 시작 — 기준 CVR 38.5%', type:'auto'},
+      {date:'2026-03-20', note:'A/B 테스트 시작', type:'manual'}
+    ] },
+  { id:3, example:true, name:'콘텐츠LAB 이벤트 페이지 개선', type:'event', status:'measuring',
+    beforeCvr:4.2, afterCvr:4.5, beforeCpa:null, afterCpa:null,
+    date:'2026-04-01', owner:'이지원', memo:'예시: 지원하기 버튼 위치·카피 개선 (CPA 미측정)',
+    clarityProjectId:null, claritySessions:null, clarityScrollDepth:null,
+    clarityDeadClick:null, clarityQuickBack:null, clarityActiveTime:null, clarityUpdatedAt:null,
+    hypothesis:'지원하기 버튼을 콘텐츠 중간에 노출하면 스크롤 없이도 전환이 발생해 apply CVR이 개선될 것이다.',
+    changeItems:['지원하기 버튼 콘텐츠 중간 위치 추가','버튼 카피 "지원하기" → "무료로 지원해보기"'],
+    activityLog:[
+      {date:'2026-04-01', note:'프로젝트 시작 — 측정 진행 중', type:'auto'}
+    ] }
+];
+let nextId = 4;
+let chartInst = null;
+
+// ── Helpers ──
+const calcCvr = (b,a) => (b&&a&&+b!==0) ? (+a - +b) / +b * 100 : null;
+const calcCpa = (b,a) => (b&&a&&+b!==0) ? (+b - +a) / +b * 100 : null;
+const calcKpi2 = (cv,cp) => cv==null?null : cp==null?cv : (cv+cp)/2;
+const getGrade = v => v==null?'none': v>=7?'s': v>=5.5?'a': v>=5?'b': v>=0?'c':'f';
+const gradeLabel = g => ({s:'S',a:'A',b:'B',c:'C',f:'F',none:'—'})[g]||'—';
+const gradeChipClass = g => ({s:'chip-s',a:'chip-a',b:'chip-b',c:'chip-c',f:'chip-f',none:'chip-none'})[g]||'chip-none';
+const gradeColor = g => ({s:'#02B160',a:'#1B55F6',b:'#2684FF',c:'#FFBB00',f:'#F22A23',none:'#86919A'})[g]||'#86919A';
+const fmt = (v,d=1) => v==null?'—': (v>=0?'+':'')+v.toFixed(d)+'%';
+const fmtWon = v => (v==null||v=='')?'—': (+v).toLocaleString()+'원';
+const typeLabel = t => ({landing:'랜딩',event:'이벤트',jd:'JD',other:'기타'})[t]||t;
+const statusLabel = s => ({ready:'준비중',measuring:'측정 중',done:'완료'})[s]||s;
+const tagClass = t => ({landing:'tag-landing',event:'tag-event',jd:'tag-jd',other:'tag-landing'})[t]||'tag-landing';
+const statusClass = s => ({ready:'tag-ready',measuring:'tag-measuring',done:'tag-done'})[s]||'tag-ready';
+
+// ── Render ──
+function render() {
+  renderTable();
+  renderSummary();
+  renderGrade();
+  renderChart();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('projectTableBody');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('projectCount');
+  count.textContent = projects.length ? `(${projects.length}건)` : '';
+  if (!projects.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = projects.map((p,i) => {
+    const cv = calcCvr(p.beforeCvr, p.afterCvr);
+    const cp = calcCpa(p.beforeCpa, p.afterCpa);
+    const k = calcKpi2(cv, cp);
+    const g = getGrade(k);
+
+    const cvCell = cv!=null
+      ? `<span class="${cv>=0?'delta-pos':'delta-neg'}">${fmt(cv)}</span>`
+      : `<span class="delta-na">측정 전</span>`;
+    const cpCell = cp!=null
+      ? `<span class="${cp>=0?'delta-pos':'delta-neg'}">${fmt(cp)}</span>`
+      : `<span class="delta-na">—</span>`;
+    const k2Cell = k!=null
+      ? `<span style="color:${gradeColor(g)};font-weight:700;font-size:14px">${fmt(k)}</span>`
+      : `<span class="delta-na">—</span>`;
+    const exBadge = p.example ? `<span class="example-badge">예시</span>` : '';
+    const memoAttr = p.memo ? ` title="${p.memo.replace(/"/g,'&quot;')}"` : '';
+
+    const hasClarity = p.claritySessions != null || p.clarityScrollDepth != null;
+    const claritySubRow = hasClarity ? `
+    <tr class="clarity-subrow${p.example?' example-row':''}">
+      <td colspan="14">
+        <div class="clarity-metrics-bar">
+          <span class="clarity-tag">Clarity UX</span>
+          ${p.claritySessions   != null ? `<span class="clarity-badge"><span class="clarity-badge-label">세션</span> <b>${p.claritySessions.toLocaleString()}</b></span>` : ''}
+          ${p.clarityScrollDepth!= null ? `<span class="clarity-badge"><span class="clarity-badge-label">스크롤깊이</span> <b>${p.clarityScrollDepth}%</b></span>` : ''}
+          ${p.clarityDeadClick  != null ? `<span class="clarity-badge"><span class="clarity-badge-label">Dead Click</span> <b class="${p.clarityDeadClick>15?'clarity-warn':p.clarityDeadClick<5?'clarity-ok':''}">${p.clarityDeadClick}%</b></span>` : ''}
+          ${p.clarityQuickBack  != null ? `<span class="clarity-badge"><span class="clarity-badge-label">빠른뒤로가기</span> <b class="${p.clarityQuickBack>25?'clarity-warn':p.clarityQuickBack<10?'clarity-ok':''}">${p.clarityQuickBack}%</b></span>` : ''}
+          ${p.clarityActiveTime != null ? `<span class="clarity-badge"><span class="clarity-badge-label">활성시간</span> <b>${p.clarityActiveTime}분</b></span>` : ''}
+          <button class="clarity-sync-btn" onclick="requestClarityUpdate(${p.id})">↻ 갱신</button>
+          <span class="clarity-updated">${p.clarityUpdatedAt ? '마지막 갱신: '+p.clarityUpdatedAt : ''}</span>
+        </div>
+      </td>
+    </tr>` : '';
+
+    return `<tr class="${p.example?'example-row':''}">
+      <td style="color:var(--text-tertiary);font-size:12px;font-variant-numeric:tabular-nums">${i+1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-weight:600;font-size:13px;color:var(--text-primary)"${memoAttr}>${p.name}${exBadge}</span>
+          ${p.url ? `<a href="${p.url}" target="_blank" title="${p.url}" style="color:var(--brand-500);display:inline-flex;flex-shrink:0"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">${p.owner||''}${(p.owner&&p.date)?' · ':''}${p.date||''}</div>
+      </td>
+      <td><span class="tag ${tagClass(p.type)}">${typeLabel(p.type)}</span></td>
+      <td><span class="tag ${statusClass(p.status)}">${statusLabel(p.status)}</span></td>
+      <td style="text-align:right"><span class="cvr-num">${p.beforeCvr!=null?p.beforeCvr.toFixed(2)+'%':'—'}</span></td>
+      <td class="cvr-arrow">→</td>
+      <td style="text-align:right"><span class="cvr-num">${p.afterCvr!=null?p.afterCvr.toFixed(2)+'%':'<span class="delta-na">—</span>'}</span></td>
+      <td style="text-align:right">${cvCell}</td>
+      <td style="text-align:right;color:var(--text-secondary)">${fmtWon(p.beforeCpa)}</td>
+      <td style="text-align:right;color:var(--text-secondary)">${fmtWon(p.afterCpa)}</td>
+      <td style="text-align:right">${cpCell}</td>
+      <td style="text-align:right">${k2Cell}</td>
+      <td style="text-align:center">
+        ${k!=null ? `<span class="grade-chip ${gradeChipClass(g)}" style="font-size:12px;font-weight:700">${gradeLabel(g)}</span>` : '<span class="grade-chip chip-none">—</span>'}
+      </td>
+      <td>
+        <div style="display:flex;gap:5px;justify-content:center">
+          <button class="btn btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="showDetail(${p.id})">상세</button>
+          <button class="btn btn-monoline" style="height:28px;font-size:11px;padding:0 8px" onclick="editProject(${p.id})">편집</button>
+          <button class="btn btn-danger" style="height:28px;font-size:11px;padding:0 8px" onclick="deleteProject(${p.id
+  if (data.deadClick})">삭제</button>
+        </div>
+      </td>
+    </tr>${claritySubRow}`;
+  }).join('');
+}
+
+function renderSummary() {
+  const done = projects.filter(p => p.status==='done' && calcCvr(p.beforeCvr,p.afterCvr)!=null);
+  document.getElementById('totalCount').textContent = projects.length ? `${projects.length}건` : '0건';
+  if (!done.length) {
+    ['avgCvrImprove','avgCpaImprove','kpi2Score'].forEach(id => document.getElementById(id).textContent='—');
+    document.getElementById('avgCvrSub').textContent='완료 프로젝트 없음';
+    return;
+  }
+  const cvrs = done.map(p => calcCvr(p.beforeCvr,p.afterCvr)).filter(v=>v!=null);
+  const cpas = done.map(p => calcCpa(p.beforeCpa,p.afterCpa)).filter(v=>v!=null);
+  const kpis = done.map(p => calcKpi2(calcCvr(p.beforeCvr,p.afterCvr),calcCpa(p.beforeCpa,p.afterCpa))).filter(v=>v!=null);
+  const avgCvr  = cvrs.reduce((a,b)=>a+b,0)/cvrs.length;
+  const avgCpa  = cpas.length ? cpas.reduce((a,b)=>a+b,0)/cpas.length : null;
+  const avgKpi2 = kpis.reduce((a,b)=>a+b,0)/kpis.length;
+
+  const cvrEl = document.getElementById('avgCvrImprove');
+  cvrEl.textContent = fmt(avgCvr);
+  cvrEl.style.color = avgCvr>=0 ? 'var(--green-500)' : 'var(--red-500)';
+  const cpaEl = document.getElementById('avgCpaImprove');
+  cpaEl.textContent = avgCpa!=null ? fmt(avgCpa) : '—';
+  if (avgCpa!=null) cpaEl.style.color = avgCpa>=0 ? 'var(--yellow-500)' : 'var(--red-500)';
+  const k2El = document.getElementById('kpi2Score');
+  k2El.textContent = fmt(avgKpi2);
+  k2El.style.color = gradeColor(getGrade(avgKpi2));
+  document.getElementById('avgCvrSub').textContent = `완료 ${done.length}건 기준`;
+}
+
+function renderGrade() {
+  const done = projects.filter(p=>p.status==='done');
+  const kpis = done.map(p=>calcKpi2(calcCvr(p.beforeCvr,p.afterCvr),calcCpa(p.beforeCpa,p.afterCpa))).filter(v=>v!=null);
+  const avg = kpis.length ? kpis.reduce((a,b)=>a+b,0)/kpis.length : null;
+  const g = getGrade(avg);
+  const el = document.getElementById('gradeScoreDisplay');
+  el.textContent = avg!=null ? fmt(avg) : '—';
+  el.style.color = avg!=null ? gradeColor(g) : 'var(--text-tertiary)';
+  ['s','a','b','c','f'].forEach(gr => {
+    document.getElementById('seg-'+gr).classList.toggle('active', gr===g);
+  });
+}
+
+function renderChart() { k!=null?+k.toFixed(2):null;
+  });
+  const gradeColors = kpi2Data.map(v=>{
+    if(v==null) return {bg:'rgba(190,195,200,0.4)',border:'#B8BFC5'};
+    const g=getGrade(v);
+    const map={s:['#02B160','#02B160'],a:['#1B55F6','#1B55F6'],b:['#2684FF','#2684FF'],c:['#FFBB00','#FFBB00'],f:['#F22A23','#F22A23']};
+    return {bg:map[g][0],border:map[g][1]};
+  });
+  if(chartInst) chartInst.destroy();
+  Chart.defaults.font.family = "'Pretendard', -apple-system, sans-serif";
+  Chart.defaults.color = '#86919A';
+  const gridColor = 'rgba(209,214,218,0.6)';
+  chartInst = new Chart(canvas, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { label:'CVR 개선율 (%)', data:cvrData,
+          backgroundColor:'#1B55F6', borderColor:'#1B55F6', borderWidth:0, borderRadius:5 },
+        { label:'KPI2 점수 (%)', data:kpi2Data,
+          backgroundColor:gradeColors.map(c=>c.bg), borderColor:gradeColors.map(c=>c.border), borderWidth:0, borderRadius:5 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:var_white, borderColor:'#D1D6DA', borderWidth:1,
+          titleColor:'#131618', bodyColor:'#636C74', padding:10,
+          callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y!=null?ctx.parsed.y.toFixed(2)+'%':'—'}`}
+        }
+      },
+      scales:{
+        x:{ grid:{color:gridColor,drawBorder:false}, ticks:{font:{size:12}} },
+        y:{ grid:{color:gridColor,drawBorder:false}, ticks:{callback:v=>v+'%',font:{size:12}} }
+      }
+    },
+    plugins:[{
+      id:'targetLine',
+      afterDraw(chart){
+        const{ctx,scales:{y},chartArea:{left,right}}=chart;
+        const yPos=y.getPixelForValue(5);
+        ctx.save();
+        ctx.beginPath(); ctx.setLineDash([5,4]);
+        ctx.strokeStyle='rgba(242,42,35,0.55)'; ctx.lineWidth=1.5;
+        ctx.moveTo(left,yPos); ctx.lineTo(right,yPos); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle='rgba(242,42,35,0.75)';
+        ctx.font='500 11px Pretendard, sans-serif';
+        ctx.fillText('목표 5%', right-42, yPos-5);
+        ctx.restore();
+      }
+    }]
+  });
+}
+const var_white = '#FFFFFF';
+
+// ── Modal ──
+function openModal(id=null) {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('editId').value = id||'';
+  document.getElementById('modalTitle').textContent = id ? '프로젝트 편집' : '프로젝트 추가';
+  if (id) {
+    const p = projects.find(x=>x.id===id);
+    if(p){
+      document.getElementById('fUrl').value=p.url||'';
+      document.getElementById('fClarityProjectId').value=p.clarityProjectId||'';
+      document.getElementById('fName').value=p.name;
+      document.getElementById('fType').value=p.type;
+      document.getElementById('fStatus').value=p.status;
+      document.getElementById('fBeforeCvr').value=p.beforeCvr??'';
+      document.getElementById('fAfterCvr').value=p.afterCvr??'';
+      document.getElementById('fBeforeCpa').value=p.beforeCpa??'';
+      document.getElementById('fAfterCpa').value=p.afterCpa??'';
+      document.getElementById('fDate').value=p.date||'';
+      document.getElementById('fOwner').value=p.owner||'';
+      document.getElementById('fMemo').value=p.memo||'';
+      updatePreview();
+    }
+  } else {
+    ['fUrl','fName','fBeforeCvr','fAfterCvr','fBeforeCpa','fAfterCpa','fOwner','fMemo','fClarityProjectId'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fType').value='landing';
+    document.getElementById('fStatus').value='ready';
+    document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('previewBox').style.display='none';
+  }
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function handleOverlayClick(e) { if(e.target===document.getElementById('modalOverlay')) closeModal(); }
+function editProject(id) { openModal(id); }
+function deleteProject(id) { if(!confirm('이 프로젝트를 삭제할까요?')) return; projects=projects.filter(p=>p.id!==id); render(); }
+
+function saveProject() {
+  const name=document.getElementById('fName').value.trim();
+  if(!name){alert('프로젝트명을 입력해주세요.');return;}
+  const beforeCvr=document.getElementById('fBeforeCvr').value;
+  if(!beforeCvr){alert('기준 CVR(Before)을 입력해주세요.');return;}
+  const id=document.getElementById('editId').value;
+  const existing = id ? projects.find(p=>p.id===+id) : null;
+  const data={
+    name, type:document.getElementById('fType').value, status:document.getElementById('fStatus').value,
+    url: document.getElementById('fUrl').value.trim(),
+    clarityProjectId: document.getElementById('fClarityProjectId').value.trim(),
+    hypothesis:   existing?.hypothesis   ?? '',
+    changeItems:  existing?.changeItems  ?? [],
+    activityLog:  existing?.activityLog  ?? [],
+    // preserve existing clarity metrics when editing
+    claritySessions:    existing?.claritySessions    ?? null,
+    clarityScrollDepth: existing?.clarityScrollDepth ?? null,
+    clarityDeadClick:   existing?.clarityDeadClick   ?? null,
+    clarityQuickBack:   existing?.clarityQuickBack   ?? null,
+    clarityActiveTime:  existing?.clarityActiveTime  ?? null,
+    clarityUpdatedAt:   existing?.clarityUpdatedAt   ?? null,
+    beforeCvr:+beforeCvr,
+    afterCvr:document.getElementById('fAfterCvr').value!==''?+document.getElementById('fAfterCvr').value:null,
+    beforeCpa:document.getElementById('fBeforeCpa').value!==''?+document.getElementById('fBeforeCpa').value:null,
+    afterCpa:document.getElementById('fAfterCpa').value!==''?+document.getElementById('fAfterCpa').value:null,
+    date:document.getElementById('fDate').value, owner:document.getElementById('fOwner').value.trim(),
+    memo:document.getElementById('fMemo').value.trim(), example:false
+  };
+  if(id){ const idx=projects.findIndex(p=>p.id===+id); if(idx>=0) projects[idx]={...projects[idx],...data}; }
+  else projects.push({id:nextId++,...data});
+  closeModal(); render();
+}
+
+function updatePreview() {
+  const bCvr=+document.getElementById('fBeforeCvr').value||null;
+  const aCvr=+document.getElementById('fAfterCvr').value||null;
+  const bCpa=+document.getElementById('fBeforeCpa').value||null;
+  const aCpa=+document.getElementById('fAfterCpa').value||null;
+  if(!bCvr){document.getElementById('previewBox').style.display='none';return;}
+  document.getElementById('previewBox').style.display='block';
+  const cv=calcCvr(bCvr,aCvr); const cp=calcCpa(bCpa,aCpa); const k=calcKpi2(cv,cp); const g=getGrade(k);
+  const cvrEl=document.getElementById('previewCvr');
+  cvrEl.textContent=cv!=null?fmt(cv):'측정 전 (After CVR 입력 필요)';
+  cvrEl.style.color=cv==null?'var(--text-tertiary)':cv>=0?'var(--green-500)':'var(--red-500)';
+  const cpaEl=document.getElementById('previewCpa');
+  cpaEl.textContent=cp!=null?fmt(cp):'—'; cpaEl.style.color=cp==null?'var(--text-tertiary)':cp>=0?'var(--yellow-700)':'var(--red-500)';
+  const k2El=document.getElementById('previewKpi2');
+  k2El.textContent=k!=null?fmt(k):'—'; k2El.style.color=k!=null?gradeColor(g):'var(--text-tertiary)';
+  const gEl=document.getElementById('previewGrade');
+  gEl.innerHTML=k!=null?`<span class="grade-chip ${gradeChipClass(g)}" style="font-size:12px;font-weight:700">${gradeLabel(g)}</span>`:'—';
+}
+
+document.addEventListener('input',e=>{
+  if(['fBeforeCvr','fAfterCvr','fBeforeCpa','fAfterCpa'].includes(e.target.id)) updatePreview();
+});
+
+// ── URL 분석 요청 (클립보드 복사) ──
+function requestUrlAnalysis() {
+  const url = document.getElementById('fUrl').value.trim();
+  if (!url) { alert('URL을 먼저 입력해주세요.'); return; }
+  const msg = `이 랜딩 URL 분석해서 트래커 폼에 자동으로 채워줘: ${url}`;
+  navigator.clipboard.writeText(msg).then(() => {
+    showAnalysisToast('메시지가 복사되었습니다 · Claude 채팅창에 붙여넣기 하세요 💬');
+  }).catch(() => {
+    prompt('아래 메시지를 복사해서 Claude 채팅창에 붙여넣으세요:', msg);
+  });
+}
+
+function showAnalysisToast(msg) {
+  let t = document.getElementById('analysisToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'analysisToast';
+    t.style.cssText = `
+      position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+      background:var(--gray-950);color:#fff;
+      padding:10px 20px;border-radius:var(--r-pill);
+      font-size:13px;font-weight:500;z-index:9999;
+      box-shadow:0 4px 16px rgba(0,0,0,0.18);
+      transition:opacity 0.3s;white-space:nowrap;
+    `;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+// ── Page routing ──
+let currentDetailId = null;
+
+function showDetail(id) {
+  currentDetailId = id;
+  document.querySelector('.header').style.display = '';
+  document.querySelector('.subheader').style.display = 'none';
+  document.querySelector('main.main').style.display = 'none';
+  document.getElementById('detailPage').style.display = 'block';
+  renderDetailPage(id);
+  window.scrollTo(0, 0);
+}
+
+function showList() {
+  currentDetailId = null;
+  document.querySelector('.subheader').style.display = '';
+  document.querySelector('main.main').style.display = '';
+  document.getElementById('detailPage').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+function renderDetailPage(id) {
+  const p = projects.find(x => x.id === id);
+  if (!p) { showList(); return; }
+
+  const cv = calcCvr(p.beforeCvr, p.afterCvr);
+  const cp = calcCpa(p.beforeCpa, p.afterCpa);
+  const k  = calcKpi2(cv, cp);
+  const g  = getGrade(k);
+
+  // ── Nav ──
+  document.getElementById('dpNavTitle').textContent = p.name;
+  document.getElementById('dpNavTags').innerHTML =
+    `<span class="tag ${tagClass(p.type)}">${typeLabel(p.type)}</span>
+     <span class="tag ${statusClass(p.status)}">${statusLabel(p.status)}</span>`;
+  document.getElementById('dpNavGrade').innerHTML = k != null
+    ? `<span class="grade-chip ${gradeChipClass(g)}" style="font-size:13px;font-weight:700">${gradeLabel(g)}</span>` : '';
+
+  // ── KPI cards ──
+  const kpiCards = [
+    { lbl:'KPI2 점수', val: k!=null?fmt(k):'—', color: gradeColor(g), sub: `등급 ${gradeLabel(g)}`, top: gradeColor(g) },
+    { lbl:'CVR 개선율', val: cv!=null?fmt(cv):'—', color: cv==null?'var(--text-tertiary)':cv>=0?'var(--green-500)':'var(--red-500)', sub: `${p.beforeCvr??'?'}% → ${p.afterCvr??'미측정'}%`, top:'var(--green-500)' },
+    { lbl:'CPA 개선율', val: cp!=null?fmt(cp):'—', color: cp==null?'var(--text-tertiary)':cp>=0?'var(--yellow-700)':'var(--red-500)', sub: p.beforeCpa?`${(+p.beforeCpa).toLocaleString()}원 → ${p.afterCpa?(+p.afterCpa).toLocaleString()+'원':'미측정'}`:'미측정', top:'var(--yellow-500)' },
+    { lbl:'Clarity 세션', val: p.claritySessions!=null?p.claritySessions.toLocaleString():'—', color:'var(--brand-500)', sub: p.clarityUpdatedAt?`${p.clarityUpdatedAt} 기준`:'Clarity 미연동', top:'var(--brand-500)' },
+  ];
+  document.getElementById('dpKpiGrid').innerHTML = kpiCards.map(c=>`
+    <div class="dp-kpi-card" style="border-top-color:${c.top}">
+      <div class="dp-kpi-lbl">${c.lbl}</div>
+      <div class="dp-kpi-val" style="color:${c.color}">${c.val}</div>
+      <div class="dp-kpi-sub">${c.sub}</div>
+    </div>`).join('');
+
+  // ── CVR / CPA 비교 ──
+  const maxCvr = Math.max(p.beforeCvr||0, p.afterCvr||0, 1);
+  const maxCpa = Math.max(p.beforeCpa||0, p.afterCpa||0, 1);
+  const barRow = (legend, pct, max, color) => `
+    <div class="dp-bar-row">
+      <div class="dp-bar-legend">${legend}</div>
+      <div class="dp-bar-track"><div class="dp-bar-fill" style="width:${Math.min((pct/max)*100,100)}%;background:${color}"></div></div>
+      <div class="dp-bar-pct" style="color:${color}">${pct!=null?pct.toFixed(2)+'%':'—'}</div>
+    </div>`;
+  document.getElementById('dpCvrSection').innerHTML = `
+    <div class="dp-section-hd">
+      <div><div class="dp-section-title">CVR · CPA Before / After 비교</div></div>
+      ${p.url?`<a href="${p.url}" target="_blank" class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 10px;gap:4px"><svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>페이지 열기</a>`:''}
+    </div>
+    <div class="dp-compare-grid">
+      <div class="dp-compare-side">
+        <div class="dp-compare-lbl">CVR (전환율)</div>
+        ${barRow('Before', p.beforeCvr, maxCvr, 'var(--gray-300)')}
+        ${barRow('After', p.afterCvr, maxCvr, cv!=null&&cv>=0?'var(--brand-500)':'var(--red-500)')}
+        <div class="dp-delta-row">
+          <span style="font-size:12px;color:var(--text-tertiary)">개선율</span>
+          <span class="dp-delta-val" style="color:${cv==null?'var(--text-tertiary)':cv>=0?'var(--green-500)':'var(--red-500)'}">${cv!=null?fmt(cv):'측정 전'}</span>
+        </div>
+      </div>
+      <div class="dp-compare-side">
+        <div class="dp-compare-lbl">CPA (전환당 비용)</div>
+        ${p.beforeCpa?barRow('Before', p.beforeCpa, maxCpa, 'var(--gray-300)'):'<div style="padding:10px 0;font-size:13px;color:var(--text-tertiary)">CPA 미측정</div>'}
+        ${p.afterCpa?barRow('After', p.afterCpa, maxCpa, cp!=null&&cp>=0?'var(--yellow-500)':'var(--red-500)'):''}
+        ${p.beforeCpa?`<div class="dp-delta-row">
+          <span style="font-size:12px;color:var(--text-tertiary)">개선율</span>
+          <span class="dp-delta-val" style="color:${cp==null?'var(--text-tertiary)':cp>=0?'var(--yellow-700)':'var(--red-500)'}">${cp!=null?fmt(cp):'측정 전'}</span>
+        </div>`:''}
+      </div>
+    </div>`;
+
+  // ── Clarity 인사이트 ──
+  const hasC = p.claritySessions != null;
+  const insights = [];
+  if (hasC) {
+    if (p.clarityScrollDepth != null) {
+      if (p.clarityScrollDepth < 50)
+        insights.push({dot:'warn', text:`<strong>스크롤 깊이가 낮아요 (${p.clarityScrollDepth}%)</strong> — 중요 CTA나 콘텐츠가 너무 아래 있을 수 있어요. 핵심 내용을 상단으로 올리는 것을 고려하세요.`});
+      else if (p.clarityScrollDepth >= 70)
+        insights.push({dot:'ok', text:`<strong>스크롤 깊이 양호 (${p.clarityScrollDepth}%)</strong> — 사용자가 페이지 콘텐츠를 충분히 탐색하고 있어요.`});
+      else
+        insights.push({dot:'info', text:`<strong>스크롤 깊이 (${p.clarityScrollDepth}%)</strong> — 보통 수준이에요. CTA 위치나 콘텐츠 구조 개선으로 높일 수 있어요.`});
+    }
+    if (p.clarityDeadClick != null) {
+      if (p.clarityDeadClick > 15)
+        insights.push({dot:'warn', text:`<strong>Dead click 높음 (${p.clarityDeadClick}%)</strong> — 클릭 가능해 보이지만 실제로 안 되는 요소가 있어요. 버튼·링크 디자인 또는 위치를 재검토하세요.`});
+      else if (p.clarityDeadClick < 5)
+        insights.push({dot:'ok', text:`<strong>Dead click 낮음 (${p.clarityDeadClick}%)</strong> — UI 요소가 사용자 기대와 잘 맞아요.`});
+      else
+        insights.push({dot:'info', text:`<strong>Dead click (${p.clarityDeadClick}%)</strong> — 적정 수준이나 CTA 주변 요소를 점검해볼 수 있어요.`});
+    }
+    if (p.clarityQuickBack != null) {
+      if (p.clarityQuickBack > 25)
+        insights.push({dot:'warn', text:`<strong>빠른 뒤로가기 높음 (${p.clarityQuickBack}%)</strong> — 첫 화면에서 이탈이 많아요. 헤드라인·비주얼이 사용자 기대와 다를 수 있어요.`});
+      else if (p.clarityQuickBack < 10)
+        insights.push({dot:'ok', text:`<strong>빠른 뒤로가기 낮음 (${p.clarityQuickBack}%)</strong> — 첫 인상이 좋아요. 랜딩 진입 후 충분히 탐색하고 있어요.`});
+      else
+        insights.push({dot:'info', text:`<strong>빠른 뒤로가기 (${p.clarityQuickBack}%)</strong> — 어느 정도 이탈이 있어요. 어보브폴드 개선을 고려해보세요.`});
+    }
+    if (p.clarityActiveTime != null) {
+      if (p.clarityActiveTime < 0.8)
+        insights.push({dot:'warn', text:`<strong>활성 시간 짧음 (${p.clarityActiveTime}분)</strong> — 체류 시간이 매우 짧아요. 콘텐츠 흥미도나 로딩 속도를 확인하세요.`});
+      else if (p.clarityActiveTime >= 2)
+        insights.push({dot:'ok', text:`<strong>활성 시간 양호 (${p.clarityActiveTime}분)</strong> — 사용자가 페이지에 충분히 머물러 콘텐츠를 소화하고 있어요.`});
+    }
+    if (!insights.length) insights.push({dot:'info', text:'Clarity 데이터가 수집됐어요. 더 많은 세션이 쌓이면 인사이트가 도출돼요.'});
+  }
+
+  const dotColor = d => d==='warn'?'var(--red-500)':d==='ok'?'var(--green-500)':'var(--brand-500)';
+  document.getElementById('dpClaritySection').innerHTML = `
+    <div class="dp-section-hd">
+      <div>
+        <div class="dp-section-title">Clarity UX 인사이트</div>
+        <div class="dp-section-sub">${hasC?`세션 ${p.claritySessions?.toLocaleString()||'—'}개 · 마지막 갱신: ${p.clarityUpdatedAt||'—'}`:'Clarity 미연동'}</div>
+      </div>
+      <button class="clarity-sync-btn" onclick="requestClarityUpdate(${p.id})">↻ Clarity 갱신</button>
+    </div>
+    ${hasC ? `
+    <div class="dp-clarity-grid">
+      ${p.clarityScrollDepth!=null?`<div class="dp-clarity-tile ${p.clarityScrollDepth<50?'warn':p.clarityScrollDepth>=70?'ok':''}"><div class="dp-tile-lbl">스크롤 깊이</div><div class="dp-tile-val">${p.clarityScrollDepth}%</div><div class="dp-tile-hint">평균</div></div>`:''}
+      ${p.clarityDeadClick!=null?`<div class="dp-clarity-tile ${p.clarityDeadClick>15?'warn':p.clarityDeadClick<5?'ok':''}"><div class="dp-tile-lbl">Dead Click</div><div class="dp-tile-val">${p.clarityDeadClick}%</div><div class="dp-tile-hint">세션 비율</div></div>`:''}
+      ${p.clarityQuickBack!=null?`<div class="dp-clarity-tile ${p.clarityQuickBack>25?'warn':p.clarityQuickBack<10?'ok':''}"><div class="dp-tile-lbl">빠른 뒤로가기</div><div class="dp-tile-val">${p.clarityQuickBack}%</div><div class="dp-tile-hint">이탈 지표</div></div>`:''}
+      ${p.clarityActiveTime!=null?`<div class="dp-clarity-tile ${p.clarityActiveTime<0.8?'warn':p.clarityActiveTime>=2?'ok':''}"><div class="dp-tile-lbl">활성 시간</div><div class="dp-tile-val">${p.clarityActiveTime}분</div><div class="dp-tile-hint">세션 평균</div></div>`:''}
+    </div>
+    <ul class="dp-insight-list">
+      ${insights.map(i=>`<li class="dp-insight-item"><span class="dp-insight-dot" style="background:${dotColor(i.dot)}"></span><span class="dp-insight-text">${i.text}</span></li>`).join('')}
+    </ul>` : `<div class="dp-no-clarity">Clarity 프로젝트 ID를 등록하고 갱신하면 UX 인사이트가 자동으로 도출돼요</div>`}`;
+
+  // ── 개선 가설 & 변경사항 ──
+  renderHypSection(p);
+
+  // ── 활동 로그 ──
+  renderLogSection(p);
+}
+
+function renderHypSection(p) {
+  document.getElementById('dpHypSection').innerHTML = `
+    <div class="dp-section-hd">
+      <div><div class="dp-section-title">개선 가설 & 변경사항</div><div class="dp-section-sub">어떤 가설로 무엇을 바꿨는지 기록해두세요</div></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">개선 가설</div>
+      <textarea class="dp-textarea" id="dp-hyp-${p.id}" placeholder="예: CTA 버튼을 상단으로 올리고 직군별 카피를 개인화하면 지원 CVR이 5% 이상 오를 것이다" onblur="saveHypothesis(${p.id})">${p.hypothesis||''}</textarea>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">변경사항</div>
+      <ul class="dp-change-list" id="dp-changes-${p.id}">
+        ${(p.changeItems||[]).map((c,i)=>`<li class="dp-change-item"><span style="flex:1">${c}</span><button class="dp-change-rm" onclick="removeChange(${p.id},${i})">✕</button></li>`).join('')}
+        ${!(p.changeItems||[]).length?'<li style="font-size:13px;color:var(--text-tertiary);padding:4px 0;font-style:italic">변경사항을 추가해주세요</li>':''}
+      </ul>
+      <div class="dp-add-row">
+        <input class="dp-add-input" id="dp-change-input-${p.id}" placeholder="예: 헤더 카피 직군별 개인화" onkeydown="if(event.key==='Enter')addChange(${p.id})">
+        <button class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px" onclick="addChange(${p.id})">+ 추가</button>
+      </div>
+    </div>`;
+}
+
+function renderLogSection(p) {
+  const logs = [...(p.activityLog||[])].reverse();
+  document.getElementById('dpLogSection').innerHTML = `
+    <div class="dp-section-hd">
+      <div><div class="dp-section-title">활동 로그</div></div>
+    </div>
+    <ul class="dp-log-list" id="dp-log-${p.id}">
+      ${logs.length ? logs.map(l=>`
+        <li class="dp-log-item">
+          <span class="dp-log-dot" style="background:${l.type==='manual'?'var(--green-500)':'var(--brand-200)'}"></span>
+          <span class="dp-log-date">${l.date}</span>
+          <span class="dp-log-note">${l.note}</span>
+        </li>`).join('') : '<li class="dp-log-empty">아직 로그가 없어요</li>'}
+    </ul>
+    <div class="dp-add-row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-subtle)">
+      <input class="dp-add-input" id="dp-log-input-${p.id}" placeholder="오늘 작업 내용이나 관찰한 점을 기록하세요" onkeydown="if(event.key==='Enter')addLog(${p.id})">
+      <button class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px" onclick="addLog(${p.id})">기록</button>
+    </div>`;
+}
+
+function saveHypothesis(id) {
+  const p = projects.find(x=>x.id===id); if(!p) return;
+  const val = document.getElementById(`dp-hyp-${id}`)?.value || '';
+  if (p.hypothesis !== val) {
+    p.hypothesis = val;
+    addAutoLog(p, '개선 가설 업데이트');
+  }
+}
+
+function addChange(id) {
+  const p = projects.find(x=>x.id===id); if(!p) return;
+  const inp = document.getElementById(`dp-change-input-${id}`);
+  const val = inp?.value.trim(); if(!val) return;
+  p.changeItems = [...(p.changeItems||[]), val];
+  addAutoLog(p, `변경사항 추가: ${val}`);
+  inp.value = '';
+  renderHypSection(p);
+}
+
+function removeChange(id, idx) {
+  const p = projects.find(x=>x.id===id); if(!p) return;
+  const removed = p.changeItems?.[idx];
+  p.changeItems = (p.changeItems||[]).filter((_,i)=>i!==idx);
+  if (removed) addAutoLog(p, `변경사항 삭제: ${removed}`);
+  renderHypSection(p);
+}
+
+function addLog(id) {
+  const p = projects.find(x=>x.id===id); if(!p) return;
+  const inp = document.getElementById(`dp-log-input-${id}`);
+  const val = inp?.value.trim(); if(!val) return;
+  p.activityLog = [...(p.activityLog||[]), { date: new Date().toLocaleDateString('ko-KR'), note: val, type: 'manual' }];
+  inp.value = '';
+  renderLogSection(p);
+}
+
+function addAutoLog(p, note) {
+  p.activityLog = [...(p.activityLog||[]), { date: new Date().toLocaleDateString('ko-KR'), note, type: 'auto' }];
+}
+
+// ── Clarity 갱신 요청 (클립보드 복사) ──
+function requestClarityUpdate(id) {
+  const p = projects.find(x=>x.id===id);
+  if (!p) return;
+  const pid = p.clarityProjectId || p.name;
+  const msg = `Clarity 프로젝트 "${pid}" 데이터 가져와서 트래커에 업데이트해줘`;
+  navigator.clipboard.writeText(msg).then(() => {
+    showAnalysisToast('Claude 채팅창에 붙여넣기 하세요 💬');
+  }).catch(() => {
+    prompt('Claude에게 붙여넣으세요:', msg);
+  });
+}
+
+// ── Claude → Chrome 자동입력 (Claude가 직접 호출) ──
+window.updateClarityData = function(projectRef, data) {
+  let p = typeof projectRef === 'number'
+    ? projects.find(x => x.id === projectRef)
+    : projects.find(x =>
+        x.clarityProjectId === projectRef ||
+        x.name.toLowerCase().includes(String(projectRef).toLowerCase())
+      );
+  if (!p) { showAnalysisToast('⚠️ 프로젝트를 찾을 수 없어요 · 이름 또는 ID를 확인해주세요'); return false; }
+  if (data.sessions      != null) p.claritySessions    = data.sessions;
+  if (data.scrollDepth   != null) p.clarityScrollDepth = data.scrollDepth;
+  if (data.deadClick     != null) p.clarityDeadClick   = data.deadClick;
+  if (data.quickBack     != null) p.clarityQuickBack   = data.quickBack;
+  if (data.activeTime    != null) p.clarityActiveTime  = data.activeTime;
+  if (data.clarityProjectId != null) p.clarityProjectId = data.clarityProjectId;
+  p.clarityUpdatedAt = data.updatedAt || new Date().toLocaleDateString('ko-KR');
+  render();
+  showAnalysisToast(`Clarity 업데이트 완료 ✓ — ${p.name}`);
+  return true;
+};
+
+// ── Claude → Chrome 자동입력 (Claude가 직접 호출) ──
+window.fillModalForm = function(data) {
+  openModal();
+  document.getElementById('modalTitle').textContent = '프로젝트 추가 (AI 분석 완료 ✓)';
+  const set = (id, val) => { if(val != null && val !== '') document.getElementById(id).value = val; };
+  set('fUrl',       data.url);
+  set('fName',      data.name);
+  set('fOwner',     data.owner);
+  set('fMemo',      data.memo);
+  set('fDate',      data.date);
+  if(data.type && document.getElementById('fType').querySelector(`option[value="${data.type}"]`))
+    document.getElementById('fType').value = data.type;
+  if(data.status && document.getElementById('fStatus').querySelector(`option[value="${data.status}"]`))
+    document.getElementById('fStatus').value = data.status;
+  set('fBeforeCvr', data.beforeCvr);
+  set('fAfterCvr',  data.afterCvr);
+  set('fBeforeCpa', data.beforeCpa);
+  set('fAfterCpa',  data.afterCpa);
+  updatePreview();
+  showAnalysisToast('AI 분석 완료 · 내용을 확인하고 저장해주세요 ✓');
+};
+
+render();
+</script>
+</body>
+</html>
