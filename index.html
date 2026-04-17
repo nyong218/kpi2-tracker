@@ -576,21 +576,7 @@ tbody tr:hover td { background: var(--gray-50); }
 <div class="subheader">
   <span class="subheader-label">목표</span>
   <span class="subheader-value">내부 CVR 개선율 + CPA 개선율 평균 5% 이상 (외부 유입 제외)</span>
-  <span class="se
-  const canvas = document.getElementById('projectChart');
-  const wrap   = document.getElementById('chartWrap');
-  const empty  = document.getElementById('chartEmpty');
-  const valid  = projects.filter(p=>calcCvr(p.beforeCvr,p.afterCvr)!=null);
-  if (!valid.length) {
-    wrap.style.display='none'; empty.style.display='flex';
-    if(chartInst){chartInst.destroy();chartInst=null;} return;
-  }
-  wrap.style.display='block'; empty.style.display='none';
-  const labels   = valid.map(p=>p.name.length>16?p.name.slice(0,16)+'…':p.name);
-  const cvrData  = valid.map(p=>+(calcCvr(p.beforeCvr,p.afterCvr)||0).toFixed(2));
-  const kpi2Data = valid.map(p=>{
-    const k=calcKpi2(calcCvr(p.beforeCvr,p.afterCvr),calcCpa(p.beforeCpa,p.afterCpa));
-    returnp">·</span>
+  <span class="sep">·</span>
   <span class="grade-chip chip-s">S ≥ 7%</span>
   <span class="grade-chip chip-a">A ≥ 5.5%</span>
   <span class="grade-chip chip-b">B ≥ 5%</span>
@@ -756,7 +742,8 @@ tbody tr:hover td { background: var(--gray-50); }
   <div class="detail-nav">
     <button class="detail-back-btn" onclick="showList()">
       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-       목록휉�\n    </button>
+      목록으로
+    </button>
     <div class="detail-nav-center">
       <span class="detail-nav-title" id="dpNavTitle"></span>
       <span id="dpNavTags" style="display:flex;gap:5px;flex-shrink:0"></span>
@@ -1035,8 +1022,7 @@ function renderTable() {
         <div style="display:flex;gap:5px;justify-content:center">
           <button class="btn btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="showDetail(${p.id})">상세</button>
           <button class="btn btn-monoline" style="height:28px;font-size:11px;padding:0 8px" onclick="editProject(${p.id})">편집</button>
-          <button class="btn btn-danger" style="height:28px;font-size:11px;padding:0 8px" onclick="deleteProject(${p.id
-  if (data.deadClick})">삭제</button>
+          <button class="btn btn-danger" style="height:28px;font-size:11px;padding:0 8px" onclick="deleteProject(${p.id})">삭제</button>
         </div>
       </td>
     </tr>${claritySubRow}`;
@@ -1083,7 +1069,21 @@ function renderGrade() {
   });
 }
 
-function renderChart() { k!=null?+k.toFixed(2):null;
+function renderChart() {
+  const canvas = document.getElementById('projectChart');
+  const wrap   = document.getElementById('chartWrap');
+  const empty  = document.getElementById('chartEmpty');
+  const valid  = projects.filter(p=>calcCvr(p.beforeCvr,p.afterCvr)!=null);
+  if (!valid.length) {
+    wrap.style.display='none'; empty.style.display='flex';
+    if(chartInst){chartInst.destroy();chartInst=null;} return;
+  }
+  wrap.style.display='block'; empty.style.display='none';
+  const labels   = valid.map(p=>p.name.length>16?p.name.slice(0,16)+'…':p.name);
+  const cvrData  = valid.map(p=>+(calcCvr(p.beforeCvr,p.afterCvr)||0).toFixed(2));
+  const kpi2Data = valid.map(p=>{
+    const k=calcKpi2(calcCvr(p.beforeCvr,p.afterCvr),calcCpa(p.beforeCpa,p.afterCpa));
+    return k!=null?+k.toFixed(2):null;
   });
   const gradeColors = kpi2Data.map(v=>{
     if(v==null) return {bg:'rgba(190,195,200,0.4)',border:'#B8BFC5'};
@@ -1185,7 +1185,7 @@ function saveProject() {
   const id=document.getElementById('editId').value;
   const existing = id ? projects.find(p=>p.id===+id) : null;
   const data={
-    name, type:document.getElementById('fType').value, status:document.getElementById('fStatus').value,
+    name, type:document.getElementById('fType').value, status:document.getElementById('fStatu�').value,
     url: document.getElementById('fUrl').value.trim(),
     clarityProjectId: document.getElementById('fClarityProjectId').value.trim(),
     hypothesis:   existing?.hypothesis   ?? '',
@@ -1512,7 +1512,7 @@ function requestClarityUpdate(id) {
   });
 }
 
-// ── Claude → Chrome 자동입력 (Claude가 직접 호출) ──
+// ── Claude → 트래커 Clarity 데이터 업데이트 (Claude가 직접 호출) ──
 window.updateClarityData = function(projectRef, data) {
   let p = typeof projectRef === 'number'
     ? projects.find(x => x.id === projectRef)
