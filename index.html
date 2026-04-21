@@ -834,6 +834,38 @@ tbody tr:hover td { background: var(--gray-50); }
           <input type="number" id="fAfterCpa" min="0" placeholder="측정 후 입력">
         </div>
       </div>
+
+      <div class="form-row full" style="margin-top:4px">
+        <div class="form-group">
+          <label>공고번호 (Metabase CPA 자동 조회용)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="fJobPostingNo" min="0" placeholder="예: 48685309" style="flex:1">
+            <button type="button" class="btn btn-monoline" style="white-space:nowrap;height:36px;padding:0 14px;font-size:13px" onclick="requestCpaUpdate()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Metabase CPA 조회
+            </button>
+          </div>
+          <span class="form-hint">공고번호 입력 후 기간 설정 → 버튼 클릭 → Claude 채팅창에 붙여넣기</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Before 측정 기간</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="date" id="fBeforePeriodStart" style="flex:1">
+            <span style="color:var(--text-tertiary);font-size:12px">~</span>
+            <input type="date" id="fBeforePeriodEnd" style="flex:1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>After 측정 기간</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="date" id="fAfterPeriodStart" style="flex:1">
+            <span style="color:var(--text-tertiary);font-size:12px">~</span>
+            <input type="date" id="fAfterPeriodEnd" style="flex:1">
+          </div>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label>런칭일</label>
@@ -969,12 +1001,12 @@ function renderTable() {
 
     const cvCell = cv!=null
       ? `<span class="${cv>=0?'delta-pos':'delta-neg'}">${fmt(cv)}</span>`
-      : `<span class="delta-na">측정 전</span>`;
+      : `<span class="delta-na">측정 저</span>`;
     const cpCell = cp!=null
       ? `<span class="${cp>=0?'delta-pos':'delta-neg'}">${fmt(cp)}</span>`
       : `<span class="delta-na">—</span>`;
     const k2Cell = k!=null
-      ? `<span style="color:${gradeColor(g)};font-weight:700;font-size:14px">${fmt(k)}</span>`
+      ? `<span style="color:${gradeColor(g)};font-weight:700;font-size:14px">${fmt(k,}</span>`
       : `<span class="delta-na">—</span>`;
     const exBadge = p.example ? `<span class="example-badge">예시</span>` : '';
     const memoAttr = p.memo ? ` title="${p.memo.replace(/"/g,'&quot;')}"` : '';
@@ -1159,13 +1191,18 @@ function openModal(id=null) {
       document.getElementById('fAfterCvr').value=p.afterCvr??'';
       document.getElementById('fBeforeCpa').value=p.beforeCpa??'';
       document.getElementById('fAfterCpa').value=p.afterCpa??'';
+      document.getElementById('fJobPostingNo').value=p.jobPostingNo??'';
+      document.getElementById('fBeforePeriodStart').value=p.beforePeriodStart||'';
+      document.getElementById('fBeforePeriodEnd').value=p.beforePeriodEnd||'';
+      document.getElementById('fAfterPeriodStart').value=p.afterPeriodStart||'';
+      document.getElementById('fAfterPeriodEnd').value=p.afterPeriodEnd||'';
       document.getElementById('fDate').value=p.date||'';
       document.getElementById('fOwner').value=p.owner||'';
       document.getElementById('fMemo').value=p.memo||'';
       updatePreview();
     }
   } else {
-    ['fUrl','fName','fBeforeCvr','fAfterCvr','fBeforeCpa','fAfterCpa','fOwner','fMemo','fClarityProjectId'].forEach(id=>document.getElementById(id).value='');
+    ['fUrl','fName','fBeforeCvr','fAfterCvr','fBeforeCpa','fAfterCpa','fOwner','fMemo','fClarityProjectId','fJobPostingNo','fBeforePeriodStart','fBeforePeriodEnd','fAfterPeriodStart','fAfterPeriodEnd'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fType').value='landing';
     document.getElementById('fStatus').value='ready';
     document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
@@ -1185,7 +1222,7 @@ function saveProject() {
   const id=document.getElementById('editId').value;
   const existing = id ? projects.find(p=>p.id===+id) : null;
   const data={
-    name, type:document.getElementById('fType').value, status:document.getElementById('fStatu�').value,
+    name, type:document.getElementById('fType').value, status:document.getElementById('fStatus').value,
     url: document.getElementById('fUrl').value.trim(),
     clarityProjectId: document.getElementById('fClarityProjectId').value.trim(),
     hypothesis:   existing?.hypothesis   ?? '',
@@ -1202,6 +1239,11 @@ function saveProject() {
     afterCvr:document.getElementById('fAfterCvr').value!==''?+document.getElementById('fAfterCvr').value:null,
     beforeCpa:document.getElementById('fBeforeCpa').value!==''?+document.getElementById('fBeforeCpa').value:null,
     afterCpa:document.getElementById('fAfterCpa').value!==''?+document.getElementById('fAfterCpa').value:null,
+    jobPostingNo:document.getElementById('fJobPostingNo').value!==''?+document.getElementById('fJobPostingNo').value:null,
+    beforePeriodStart:document.getElementById('fBeforePeriodStart').value||null,
+    beforePeriodEnd:document.getElementById('fBeforePeriodEnd').value||null,
+    afterPeriodStart:document.getElementById('fAfterPeriodStart').value||null,
+    afterPeriodEnd:document.getElementById('fAfterPeriodEnd').value||null,
     date:document.getElementById('fDate').value, owner:document.getElementById('fOwner').value.trim(),
     memo:document.getElementById('fMemo').value.trim(), example:false
   };
@@ -1499,6 +1541,49 @@ function addAutoLog(p, note) {
   p.activityLog = [...(p.activityLog||[]), { date: new Date().toLocaleDateString('ko-KR'), note, type: 'auto' }];
 }
 
+// ── Metabase CPA 조회 요청 (모달 내 버튼) ──
+function requestCpaUpdate() {
+  const gno = document.getElementById('fJobPostingNo').value.trim();
+  const bStart = document.getElementById('fBeforePeriodStart').value;
+  const bEnd   = document.getElementById('fBeforePeriodEnd').value;
+  const aStart = document.getElementById('fAfterPeriodStart').value;
+  const aEnd   = document.getElementById('fAfterPeriodEnd').value;
+  const name   = document.getElementById('fName').value.trim() || '현재 프로젝트';
+  if (!gno) { alert('공고번호를 먼저 입력해주세요.'); return; }
+  if (!bStart || !bEnd) { alert('Before 측정 기간을 입력해주세요.'); return; }
+  const afterPart = (aStart && aEnd) ? ` / After 기간: ${aStart} ~ ${aEnd}` : ' (After 기간 미입력 시 beforeCpa만 조회)';
+  const msg = `Metabase에서 공고번호 ${gno} 기준으로 CPA 조회해서 트래커 "${name}" 프로젝트에 업데이트해줘. Before 기간: ${bStart} ~ ${bEnd}${afterPart}`;
+  navigator.clipboard.writeText(msg).then(() => {
+    showAnalysisToast('Claude 채팅창에 붙여넣기 하세요 💬');
+  }).catch(() => {
+    prompt('Claude에게 붙여넣으세요:', msg);
+  });
+}
+
+// ── Claude → 트래커 CPA 데이터 업데이트 (Claude가 직접 호출) ──
+window.updateCpaData = function(projectRef, data) {
+  let p = typeof projectRef === 'number'
+    ? projects.find(x => x.id === projectRef)
+    : projects.find(x =>
+        x.jobPostingNo === projectRef ||
+        x.name.toLowerCase().includes(String(projectRef).toLowerCase())
+      );
+  if (!p) { showAnalysisToast('⚠️ 프로젝트를 찾을 수 없어요 · 이름 또는 공고번호를 확인해주세요'); return false; }
+  if (data.beforeCpa != null) p.beforeCpa = data.beforeCpa;
+  if (data.afterCpa  != null) p.afterCpa  = data.afterCpa;
+  if (data.jobPostingNo       != null) p.jobPostingNo       = data.jobPostingNo;
+  if (data.beforePeriodStart  != null) p.beforePeriodStart  = data.beforePeriodStart;
+  if (data.beforePeriodEnd    != null) p.beforePeriodEnd    = data.beforePeriodEnd;
+  if (data.afterPeriodStart   != null) p.afterPeriodStart   = data.afterPeriodStart;
+  if (data.afterPeriodEnd     != null) p.afterPeriodEnd     = data.afterPeriodEnd;
+  p.cpaUpdatedAt = data.updatedAt || new Date().toLocaleDateString('ko-KR');
+  addAutoLog(p, `CPA 자동 조회 완료: Before ${data.beforeCpa ? data.beforeCpa.toLocaleString()+'원' : '—'} / After ${data.afterCpa ? data.afterCpa.toLocaleString()+'원' : '—'}`);
+  render();
+  if (window.currentDetailId === p.id) renderDetailPage(p.id);
+  showAnalysisToast(`CPA 업데이트 완료 ✓ — ${p.name}`);
+  return true;
+};
+
 // ── Clarity 갱신 요청 (클립보드 복사) ──
 function requestClarityUpdate(id) {
   const p = projects.find(x=>x.id===id);
@@ -1551,6 +1636,11 @@ window.fillModalForm = function(data) {
   set('fAfterCvr',  data.afterCvr);
   set('fBeforeCpa', data.beforeCpa);
   set('fAfterCpa',  data.afterCpa);
+  set('fJobPostingNo',      data.jobPostingNo);
+  set('fBeforePeriodStart', data.beforePeriodStart);
+  set('fBeforePeriodEnd',   data.beforePeriodEnd);
+  set('fAfterPeriodStart',  data.afterPeriodStart);
+  set('fAfterPeriodEnd',    data.afterPeriodEnd);
   updatePreview();
   showAnalysisToast('AI 분석 완료 · 내용을 확인하고 저장해주세요 ✓');
 };
