@@ -1006,7 +1006,7 @@ function renderTable() {
       ? `<span class="${cp>=0?'delta-pos':'delta-neg'}">${fmt(cp)}</span>`
       : `<span class="delta-na">—</span>`;
     const k2Cell = k!=null
-      ? `<span style="color:${gradeColor(g)};font-weight:700;font-size:14px">${fmt(k,}</span>`
+      ? `<span style="color:${gradeColor(g)};font-weight:700;font-size:14px">${fmt(k)}</span>`
       : `<span class="delta-na">—</span>`;
     const exBadge = p.example ? `<span class="example-badge">예시</span>` : '';
     const memoAttr = p.memo ? ` title="${p.memo.replace(/"/g,'&quot;')}"` : '';
